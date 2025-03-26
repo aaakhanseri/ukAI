@@ -7,7 +7,7 @@ import express from 'express'
 import axios from 'axios'
 import puppeteer from 'puppeteer'
 import { Telegraf } from 'telegraf'
-import { humanizeText } from '../humanize.js'
+import { humanizeText } from './humanize.js'
 
 import { connect } from 'puppeteer-real-browser'
 import fetch from 'node-fetch'
