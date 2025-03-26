@@ -1,9 +1,11 @@
 {
   "name": "a",
+  "type": "module",
   "version": "1.0.0",
   "main": "bookHotel.js",
   "scripts": {
-    "start": "node ukserver.js"
+    "start": "node server.js",
+    "start:uk": "node ukserver.js"
   },
   "author": "",
   "license": "ISC",
