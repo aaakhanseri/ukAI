@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Мульти-чат бот</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="sidebar">
+
+    <button class="createChat" onclick="createChat()">Нажмите чтоб создать новый чат</button>
+    <div id="chat-list" class="chat-list"></div>
+    
+  </div>
+
+
+  <div class="chat-area">
+    <div class="chat-box" id="chat-box"></div>
+    <div class="input-area">
+      <input type="text" id="userInput" placeholder="Введите сообщение...">
+      <button id="sendBtn" onclick="sendMessage()">Отправить</button>
+      <button onclick="clearChat()" id="resetBtn">Очистить чат</button>
+      <br><br>
+
+     
+      <button id="previewBtn" onclick="previewData()" disabled>Предпросмотр</button>
+      <button id="finalSubmitBtn" disabled>Отправить на сайт</button>
+     </div>
+  </div>
+
+  <!-- Модальное окно для редактирования названия чата -->
+<div id="editChatModal" class="modal">
+  <div class="modal-content">
+      <span class="close" onclick="closeEditModal()">&times;</span>
+      <h2>Изменить название чата</h2>
+      <input type="text" id="newChatName" placeholder="Новое название чата">
+      <button onclick="saveNewChatName()">Сохранить</button>
+  </div>
+</div>
+
+
+  <div id="modalOverlay" onclick="closeModal()"></div>
+  <div id="editModal">
+    <h3>Редактировать ответы</h3>
+    <div id="editFields"></div>
+    <button onclick="applyChanges()" id="applyBtn">Применить изменения</button>
+    <button onclick="closeModal()" id="closeModalBtn">Закрыть</button>
+  </div>
+
+
+<script>
+const editModal = document.getElementById('editModal');
+
+let chats = {};
+let currentChatId = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    createChat(); // Initialize the first chat on load
+});
+
+
+// function createChat() {
+//     const chatId = `chat_${new Date().getTime()}`;
+//     if (!chats[chatId]) {
+//         chats[chatId] = {
+//             messages: [],
+//             parsedData: {}
+//         };
+//     }
+
+//     const chatList = document.getElementById('chat-list');
+//     const chatButton = document.createElement('button');
+//     chatButton.textContent = `Чат ${Object.keys(chats).length}`;
+//     chatButton.onclick = () => switchChat(chatId);
+//     chatList.appendChild(chatButton);
+
+//     if (Object.keys(chats).length === 1) {
+//         switchChat(chatId); // Automatically switch to the first chat when created
+//     }
+//     updateEditButtonState(); // Update button states right after creating a chat
+// }
+
+function createChat() {
+    const chatId = `chat_${new Date().getTime()}`;
+    if (!chats[chatId]) {
+        chats[chatId] = {
+            name: `Чат ${Object.keys(chats).length + 1}`, // Задаем начальное название чата
+            messages: [],
+            parsedData: {}
+        };
+    }
+
+    const chatList = document.getElementById('chat-list');
+    const chatDiv = document.createElement('div');
+    chatDiv.className = 'chat-entry';
+    chatDiv.innerHTML = `
+      <button onclick="switchChat('${chatId}')">${chats[chatId].name}</button>
+      <span onclick="editChatName('${chatId}')" class="edit-icon">✏️</span>
+      <span onclick="deleteChat('${chatId}')" class="delete-icon">🗑️</span>
+    `;
+    chatList.appendChild(chatDiv);
+
+    if (Object.keys(chats).length === 1) {
+        switchChat(chatId); // Автоматически переключаемся на первый созданный чат
+    }
+    updateChatList(); // Обновляем список чатов, если это необходимо
+}
+
+
+
+
+function updateEditButtonState() {
+    const currentParsedData = chats[currentChatId] ? chats[currentChatId].parsedData : {};
+    let hasErrors = Object.values(currentParsedData).some(data => !data || (typeof data === 'object' && Object.values(data).some(v => !v)));
+
+    document.getElementById('previewBtn').disabled = hasErrors;
+    document.getElementById('finalSubmitBtn').disabled = hasErrors;
+}
+
+function switchChat(chatId) {
+    if (currentChatId !== chatId) {
+        currentChatId = chatId;
+        updateChatBox(); // Обновляет содержимое чата, загружая сообщения только выбранного чата
+        updateEditButtonState(); // Обновляет состояние кнопок в зависимости от состояния текущего чата
+    }
+}
+
+
+// function updateChatBox() {
+//     const chatBox = document.getElementById('chat-box');
+//     chatBox.innerHTML = ''; // Очищаем текущее содержимое чата
+
+//     if (chats[currentChatId] && chats[currentChatId].messages) {
+//         chats[currentChatId].messages.forEach(msg => {
+//             const messageDiv = document.createElement('div');
+//             messageDiv.className = `message ${msg.sender}`;
+//             messageDiv.textContent = msg.text;
+//             chatBox.appendChild(messageDiv);
+//         });
+//     }
+//     chatBox.scrollTop = chatBox.scrollHeight; // Прокручиваем чат до последнего сообщения
+// }
+// function updateChatBox() {
+//     const chatBox = document.getElementById('chat-box');
+//     chatBox.innerHTML = ''; // Clear the chat box
+
+//     // If there are messages, render them
+//     if (chats[currentChatId] && chats[currentChatId].messages.length > 0) {
+//         chats[currentChatId].messages.forEach(msg => {
+//             const messageDiv = document.createElement('div');
+//             messageDiv.className = `message ${msg.sender}`;
+//             messageDiv.textContent = msg.text;
+//             chatBox.appendChild(messageDiv);
+//         });
+//         chatBox.scrollTop = chatBox.scrollHeight; // Scroll to the bottom of the chat
+//     }
+// }
+
+function updateChatBox() {
+    const chatBox = document.getElementById('chat-box');
+    chatBox.innerHTML = ''; // Очищает предыдущие сообщения в окне чата
+
+    // Если есть сообщения в текущем чате, отобразить их
+    if (chats[currentChatId] && chats[currentChatId].messages.length > 0) {
+        chats[currentChatId].messages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${msg.sender}`;
+            messageDiv.textContent = msg.text;
+            chatBox.appendChild(messageDiv);
+        });
+    }
+    chatBox.scrollTop = chatBox.scrollHeight; // Автоматическая прокрутка к последнему сообщению
+}
+
+document.getElementById('resetBtn').addEventListener('click', clearChat);
+
+function updateEditButtonState() {
+    // This needs to check if the current chat data is complete or if fields are missing
+    const currentParsedData = chats[currentChatId] ? chats[currentChatId].parsedData : {};
+    let hasErrors = Object.entries(currentParsedData).some(([key, value]) => {
+        return (!value || value.trim() === '') && !key.startsWith("Ребенок ");
+    }) || (currentParsedData["Дети"] && currentParsedData["Дети"].some(child => {
+        return Object.values(child).some(val => !val || val.toLowerCase().includes('требуется ввод'));
+    }));
+
+    document.getElementById('previewBtn').disabled = hasErrors;
+    document.getElementById('finalSubmitBtn').disabled = hasErrors;
+}
+
+function clearChat() {
+    if (chats[currentChatId]) {
+        // Clear the messages for the current chat
+        chats[currentChatId].messages = [];
+        // Optionally reset the parsed data for the current chat
+        chats[currentChatId].parsedData = {};
+        // Clear the display of the chat box
+        updateChatBox();
+        // Clear any data shown in the edit fields if necessary
+        clearEditFields();
+        // Update the state of the buttons
+        updateEditButtonState();
+    }
+}
+function clearEditFields() {
+    const editFields = document.getElementById('editFields');
+    if (editFields) {
+        editFields.innerHTML = ''; // Clears any rendered input fields
+    }
+}
+
+
+const sendBtn = document.getElementById('sendBtn');
+sendBtn.addEventListener('click', async () => {
+    const userInput = document.getElementById('userInput');
+    const message = userInput.value.trim();
+    if (!message) return;
+    addMessage('Вы: ' + message, 'user');
+    userInput.value = '';
+
+    try {
+        const response = await fetch('/process', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message, currentForm: chats[currentChatId].parsedData })
+        });
+        const data = await response.json();
+        handleFormData(data);
+    } catch (err) {
+        console.error('Ошибка при обработке запроса:', err);
+        addMessage('Ошибка при обработке запроса.', 'assistant');
+    }
+});
+
+function handleFormData(data) {
+    let hasErrors = false;
+    const missingQuestions = [];
+    let currentChildIndex = null;
+
+    const lines = data.reply.split('\n').filter(line => line.trim().length > 0);
+    lines.forEach(line => {
+        const parts = line.split(':');
+        if (parts.length < 2) return;
+
+        const key = parts[0].trim();
+        const value = parts[1].trim();
+
+        const currentParsedData = chats[currentChatId].parsedData;
+
+        if (key.startsWith('Ребенок')) {
+            const index = parseInt(key.split(' ')[1]) - 1;
+            currentChildIndex = index;
+            if (!currentParsedData["Дети"]) currentParsedData["Дети"] = [];
+            if (!currentParsedData["Дети"][currentChildIndex]) currentParsedData["Дети"][currentChildIndex] = {};
+        } else if (currentChildIndex !== null && key.startsWith('- ')) {
+            const subKey = key.replace(/^- /, '').trim();
+            if (!value || value.toLowerCase().includes('требуется ввод')) {
+                hasErrors = true;
+                missingQuestions.push(`Ребенок ${currentChildIndex + 1} – ${subKey}: (Введите ваш ответ)`);
+            } else {
+                currentParsedData["Дети"][currentChildIndex][subKey] = value;
+            }
+        } else {
+            if (!value || value.toLowerCase().includes('требуется ввод')) {
+                hasErrors = true;
+                missingQuestions.push(`${key}: (Введите ваш ответ)`);
+            } else {
+                currentParsedData[key] = value;
+            }
+        }
+    });
+
+    updateEditButtonState(); // Ensure buttons are updated with the new data state
+
+    if (missingQuestions.length > 0) {
+        addMessage('⚠️ Не хватает данных, уточните:', 'assistant');
+        missingQuestions.forEach(q => addMessage(q, 'assistant'));
+    } else {
+        addMessage('✅ Данные успешно получены!', 'assistant');
+    }
+}
+
+
+// chatId for sent and recevieng when sending the messages use chat id and when receive the same
+
+function addMessage(text, sender) {
+    if (!chats[currentChatId]) {
+        console.error('No active chat to add messages');
+        return; // Если текущий чат не найден, выходим из функции
+    }
+
+    const msg = {
+        text: text,
+        sender: sender
+    };
+
+    chats[currentChatId].messages.push(msg);
+    updateChatBox(); // Обновляем отображение чата
+}
+
+
+
+
+// function updateEditButtonState() {
+//     const currentParsedData = chats[currentChatId].parsedData;
+//     let hasErrors = Object.entries(currentParsedData).some(([key, value]) => {
+//         return (!value || value.trim() === '') && !key.startsWith("Ребенок ");
+//     }) || (currentParsedData["Дети"] && currentParsedData["Дети"].some(child => {
+//         return Object.values(child).some(val => !val || val.toLowerCase().includes('требуется ввод'));
+//     }));
+
+//     document.getElementById('previewBtn').disabled = hasErrors;
+//     document.getElementById('finalSubmitBtn').disabled = hasErrors;
+// }
+
+// function updateEditButtonState() {
+//     // Disable buttons if there are no messages or parsed data fields are incomplete
+//     const hasMessages = chats[currentChatId] && chats[currentChatId].messages.length > 0;
+//     const currentParsedData = chats[currentChatId] ? chats[currentChatId].parsedData : {};
+//     let hasErrors = !hasMessages || Object.values(currentParsedData).some(data => !data || (typeof data === 'object' && Object.values(data).some(v => !v)));
+
+//     document.getElementById('previewBtn').disabled = hasErrors;
+//     document.getElementById('finalSubmitBtn').disabled = hasErrors;
+// }
+
+function updateEditButtonState() {
+    // Check if there are any messages or data entries in the current chat
+    const hasMessages = chats[currentChatId] && chats[currentChatId].messages.length > 0;
+    const hasData = chats[currentChatId] && Object.keys(chats[currentChatId].parsedData).length > 0;
+
+    // Disable buttons if no messages and no data
+    document.getElementById('previewBtn').disabled = !hasMessages && !hasData;
+    document.getElementById('finalSubmitBtn').disabled = !hasMessages && !hasData;
+}
+
+// Call this function initially to set up button states correctly
+updateEditButtonState();
+
+document.getElementById('previewBtn').addEventListener('click', () => {
+    const editFields = document.getElementById('editFields');
+    editFields.innerHTML = '';
+
+    const currentParsedData = chats[currentChatId].parsedData;
+    Object.entries(currentParsedData).forEach(([key, value]) => {
+        if (typeof value === 'object' && value !== null) {
+            // Assuming nested objects may not be directly editable or should be handled differently
+            console.log('Nested data needs specific handling:', key);
+        } else {
+            createField(key, value);
+        }
+    });
+
+    function createField(key, value) {
+        const div = document.createElement('div');
+        div.className = 'field';
+
+        const label = document.createElement('label');
+        label.textContent = key;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = value;
+        input.dataset.key = key;
+
+        div.appendChild(label);
+        div.appendChild(input);
+        editFields.appendChild(div);
+    }
+
+    
+    document.getElementById('modalOverlay').style.display = 'block';
+    document.getElementById('editModal').style.display = 'block';
+});
+
+
+let isSubmitting = false;
+
+document.getElementById('finalSubmitBtn').addEventListener('click', () => {
+    if (isSubmitting) return;
+    isSubmitting = true;
+
+    const currentParsedData = chats[currentChatId].parsedData;
+    fetch('/finalProcess', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ updatedForm: currentParsedData })
+    })
+    .then(response => response.json())
+    .then(finalData => {
+        console.log('Processed JSON:', finalData.reply);
+        return fetch('/finalSubmit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(finalData.reply)
+        });
+    })
+    .then(response => response.json())
+    .then(data => {
+        addMessage('Финальные данные успешно отправлены', 'system');
+        isSubmitting = false; // Reset the flag
+    })
+    .catch(error => {
+        console.error('Error sending data:', error);
+        addMessage('Ошибка отправки данных.', 'assistant');
+        isSubmitting = false; // Reset the flag even on error
+    });
+});
+
+
+
+function previewData() {
+    const editFields = document.getElementById('editFields');
+    editFields.innerHTML = '';
+    Object.entries(chats[currentChatId].parsedData).forEach(([key, value]) => {
+        if (typeof value === 'object') {
+            Object.entries(value).forEach(([childKey, childValue]) => {
+                createField(`${key} ${childKey}`, childValue);
+            });
+        } else {
+            createField(key, value);
+        }
+    });
+    document.getElementById('modalOverlay').style.display = 'block';
+    document.getElementById('editModal').style.display = 'block';
+}
+
+function createField(key, value) {
+    const div = document.createElement('div');
+    div.className = 'field';
+    const label = document.createElement('label');
+    label.textContent = key;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = value;
+    input.dataset.key = key;
+    div.appendChild(label);
+    div.appendChild(input);
+    document.getElementById('editFields').appendChild(div);
+}
+
+function applyChanges() {
+    const inputs = document.querySelectorAll('#editFields input');
+    inputs.forEach(input => {
+        const keys = input.dataset.key.split(' '); // Предполагаем что ключи могут быть вида "Дети 1 имя"
+        if (keys[0] === "Дети" && keys.length === 3) {
+            const childIndex = parseInt(keys[1]) - 1;
+            const field = keys[2];
+
+            if (!chats[currentChatId].parsedData["Дети"]) {
+                chats[currentChatId].parsedData["Дети"] = [];
+            }
+            if (!chats[currentChatId].parsedData["Дети"][childIndex]) {
+                chats[currentChatId].parsedData["Дети"][childIndex] = {};
+            }
+            chats[currentChatId].parsedData["Дети"][childIndex][field] = input.value;
+        } else {
+            // Для всех остальных полей, которые не подходят под формат "Дети X поле"
+            chats[currentChatId].parsedData[input.dataset.key] = input.value;
+        }
+    });
+    addMessage("✅ Данные успешно обновлены!", "system");
+    closeModal();
+    updateChatBox(); // Обновляем чат чтобы показать изменения
+    updateEditButtonState(); // Обновляем состояние кнопок
+}
+
+
+function closeModal() {
+    document.getElementById('modalOverlay').style.display = 'none';
+    document.getElementById('editModal').style.display = 'none';
+}
+
+
+
+function updateEditButtonState() {
+    // Проверяем, существует ли текущий чат и его данные
+    const currentParsedData = chats[currentChatId] ? chats[currentChatId].parsedData : {};
+
+    // Определяем, есть ли ошибки в данных
+    let hasErrors = !currentParsedData || Object.keys(currentParsedData).length === 0; // Нет данных вообще
+    hasErrors = hasErrors || Object.entries(currentParsedData).some(([key, value]) => {
+        // Проверка, если значение пустое или если это объект, проверяем, все ли его значения заполнены
+        if (typeof value === 'object' && value !== null) {
+            return Object.values(value).some(v => !v); // Если хотя бы одно значение пустое, возвращаем true
+        } else {
+            return !value; // Для обычных полей проверяем, что значение не пустое
+        }
+    });
+
+    // Настройка доступности кнопок на основе наличия ошибок
+    document.getElementById('previewBtn').disabled = hasErrors;
+    document.getElementById('finalSubmitBtn').disabled = hasErrors;
+}
+
+function updateChatList() {
+    const chatList = document.getElementById('chat-list');
+    chatList.innerHTML = ''; // Очищаем список чатов
+    Object.keys(chats).forEach(chatId => {
+        const chatDiv = document.createElement('div');
+        chatDiv.className = 'chat-entry';
+        chatDiv.innerHTML = `
+          <button onclick="switchChat('${chatId}')">${chats[chatId].name}</button>
+          <span onclick="editChatName('${chatId}')" class="edit-icon">✏️</span>
+          <span onclick="deleteChat('${chatId}')" class="delete-icon">🗑️</span>
+        `;
+        chatList.appendChild(chatDiv);
+    });
+}
+
+
+
+// function editChatName(chatId) {
+//     const newName = prompt("Введите новое название для чата:", chats[chatId].name);
+//     if (newName) {
+//         chats[chatId].name = newName;
+//         updateChatList();
+//     }
+// }
+
+function editChatName(chatId) {
+    const modal = document.getElementById('editChatModal');
+    const input = document.getElementById('newChatName');
+    input.value = chats[chatId].name; // Устанавливаем текущее название чата в поле ввода
+    modal.style.display = 'block'; // Показываем модальное окно
+
+    // Функция для сохранения нового названия
+    window.saveNewChatName = function() {
+        if (input.value.trim() !== '') {
+            chats[chatId].name = input.value.trim();
+            updateChatList();
+            modal.style.display = 'none';
+        } else {
+            alert("Название чата не может быть пустым!");
+        }
+    }
+}
+
+function closeEditModal() {
+    document.getElementById('editChatModal').style.display = 'none';
+}
+
+
+function deleteChat(chatId) {
+    if (confirm("Вы действительно хотите удалить этот чат?")) {
+        delete chats[chatId];
+        if (currentChatId === chatId) {
+            currentChatId = null;
+            document.getElementById('chat-box').innerHTML = ''; // Очистить область чата
+        }
+        updateChatList();
+    }
+}
+
+
+</script>
+</body>
+</html>

@@ -1,0 +1,330 @@
+
+body, html {
+  height: 100%;
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  background: #f5f7fa;
+}
+
+/* Layout */
+.sidebar {
+  background-color: #252526;
+  width: 18%;
+  height: 100%;
+  position: fixed;
+  overflow-y: auto;
+  padding: 10px;
+}
+.createChat{
+  width: 100%;
+  margin-bottom: 30px;
+    padding: 10px 15px;
+    background-color: #0078d4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+.createChat:hover {
+  background-color: #0056b3;
+}
+
+.chat-area {
+  margin-left: 20%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Chat List */
+.chat-list {
+  margin-bottom: 20px;
+}
+.chat-list button {
+  width: 100%;
+  padding: 10px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  margin-top: 5px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+.chat-list button:hover {
+  background-color: #0056b3;
+}
+
+/* Chat Box */
+.chat-box {
+  flex-grow: 1;
+  padding: 20px;
+  overflow-y: auto;
+  background: white;
+  border-top: 2px solid #0078d4;
+  /* ЗДЕСЬ МЕНЯЕТСЯ ФОТКА */ 
+  background-image: url(2023-01-13.png);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+
+
+}
+.message {
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #e1f5fe;
+  border-radius: 10px;
+}
+
+/* Input Area */
+.input-area {
+  padding: 10px;
+  background-color: #f1f1f1;
+}
+input[type="text"] {
+  width: calc(100% - 300px);
+  padding: 10px;
+  margin-right: 10px;
+  border: 2px solid #0078d4;
+  border-radius: 5px;
+  outline: none;
+}
+input[type="text"]:focus {
+  border-color: #0056b3;
+  box-shadow: 0px 0px 8px #abe0ff;
+}
+.input-area button {
+  padding: 10px 15px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.input-area button:hover {
+  background-color: #0056b3;
+}
+.input-area button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+/* Modal */
+#modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 100;
+  display: none;
+}
+#editModal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
+  width: 30%;
+  max-height: 70vh;
+  overflow-y: auto;
+  display: none;
+  z-index: 101;
+}
+.field label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+  color: #333;
+}
+.field input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+.field input:focus {
+  border-color: #0078d4;
+  box-shadow: 0px 0px 5px #abe0ff;
+}
+
+/* Keyframes for animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+
+/* Modal Overlay */
+#modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: none;
+    z-index: 1000; /* High z-index to ensure it is on top */
+}
+
+/* Modal Window */
+#editModal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 30%;
+    max-width: 600px; /* Maximum width */
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    display: none;
+    z-index: 1001; /* Higher than overlay */
+}
+
+/* Modal Content */
+.editFields {
+    margin-bottom: 20px;
+}
+
+.field {
+    margin-bottom: 10px;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 14px;
+}
+
+.field input[type="text"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+/* Buttons inside modal */
+#editModal button {
+    padding: 10px 20px;
+    margin-right: 10px;
+    background-color: #0078d4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#editModal button:hover {
+    background-color: #0056b3;
+}
+
+#closeModalBtn {
+    background-color: #cccccc;
+}
+
+#closeModalBtn:hover {
+    background-color: #aaaaaa;
+}
+
+/* To ensure the modal and overlay cover the entire screen correctly */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+
+.chat-entry {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.edit-icon, .delete-icon {
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+.chat-entry button {
+  flex-grow: 1;
+}
+.modal {
+  display: none; /* Скрыто по умолчанию */
+  position: fixed;
+  z-index: 1000; /* Сидит на верху */
+  left: 0;
+  top: 0;
+  width: 100%; /* Ширина на весь экран */
+  height: 100%; /* Высота на весь экран */
+  overflow: auto; /* Включить прокрутку, если нужно */
+  background-color: rgba(0,0,0,0.4); /* Черный с непрозрачностью */
+}
+
+.modal-content {
+  position: absolute;
+  background-color: #fefefe;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #888;
+  width: 40%; /* Ширина контента */
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  animation: animatetop 0.4s; /* Анимация */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Центрирование */
+}
+
+@keyframes animatetop {
+  from {top: -300px; opacity: 0}
+  to {top: 50%; opacity: 1}
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.modal-content button {
+  padding: 10px 20px;
+  background-color: #0078d4;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-content button:hover {
+  background-color: #0056b3
+}
+
+.modal-content input[type="text"] {
+  width: 95%;
+  padding: 12px; /* Высота как у инпут арен */
+  margin: 10px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
