@@ -1,6 +1,7 @@
 {
   "name": "uk",
   "version": "1.0.0",
+  "type": "module",
   "main": "ukserver.js",
   "scripts": {
     "start": "node ukserver.js"
