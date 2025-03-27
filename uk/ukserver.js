@@ -11,6 +11,9 @@ import { humanizeText } from './humanize.js'
 
 import { connect } from 'puppeteer-real-browser'
 import fetch from 'node-fetch'
+import dotenv from 'dotenv'
+
+dotenv.config()
 
 if (!globalThis.fetch) {
   globalThis.fetch = fetch
