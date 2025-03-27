@@ -186,7 +186,8 @@ async function bookHotel({
       console.log(`Открываем второй отель: ${hotelLink}`)
       await page.goto(hotelLink, { waitUntil: 'networkidle2' })
 
-      await page.goto(hotelLink, { waitUntil: 'networkidle2' })
+      await delay(12000);
+
 
       await page.waitForSelector('.hprt-nos-select.js-hprt-nos-select', { timeout: 10000 })
 
