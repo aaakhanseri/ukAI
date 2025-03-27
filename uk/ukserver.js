@@ -156,6 +156,7 @@ async function bookHotel({
 
       const baseUrl = 'https://www.booking.com/searchresults.en-gb.html'
       const params = new URLSearchParams({
+        lang: 'ru',
         aid: '304142',
         ss: city,
         checkin: checkinDate,
@@ -267,7 +268,7 @@ async function bookHotel({
 
       console.log('Данные успешно введены и отправлены!')
 
-      await page.waitForNavigation()
+      await delay(12000);
 
       // Wait for the element to be available before interacting with it
       const rejectButton = await page.$('#onetrust-reject-all-handler')
