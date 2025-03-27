@@ -145,7 +145,7 @@ async function bookHotel({
         headless: false,
         slowMo: 50,
         defaultViewport: null,
-        args: ['--start-maximized'],
+        args: ['--start-maximized', '--no-sandbox', '--disable-setuid-sandbox'],
       })
 
       console.log('Браузер запущен!')
